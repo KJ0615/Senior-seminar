@@ -14,18 +14,24 @@ The primary purpose of this study is to analyze how the field of mythology inter
 
 ### Prerequisites
 -Editor Used
+
 -Python Version in Visual Studio Code(1.83.1 (Universal))
+
 -R Version(2023.06.0+421 (2023.06.0+421))
 
 ### Data
 -General Purpose(OS)
+
 -Data Manipulation(Pandas,Numpy)
+
 -Data Visualization(matplotlib)
+
 -Machine Learning(scikit)
 
 
 ### Code(to be added)
 -data.csv(collect from WOS and grabbed by SQL)
+
 -clean_data.csv(cleaned by Python and R)
 
 
