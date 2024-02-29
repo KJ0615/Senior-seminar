@@ -1,0 +1,91 @@
+---
+title: "Mythology"
+author: "Kunyang Ji"
+date: "2024-02-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(readxl)
+library(igraph)
+```
+
+
+```{r}
+#read data
+myth <-read_excel("savedrecs.xls")
+```
+
+```{r}
+summary(myth)
+```
+
+```{r}
+#filter columns
+myth_new <- myth %>%
+  select("Authors","Book Authors","Article Title","Document Type", "Cited Reference Count","Publisher","Publisher City","Publication Year","Start Page","End Page","Abstract")
+myth_new <-myth_new %>%
+  filter(`Publication Year` >= 1923 & `Publication Year` <= 2023)
+```
+
+```{r}
+#time-series
+#https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
+timeseries <- ts(myth$`Publication Year`)
+timeseries <- ts(timeseries, frequency=1, start=c(1923))
+#what if I would to let frequency be 5 years once
+plot.ts(timeseries)
+```
+
+```{r}
+#net work analysis
+#https://www.r-bloggers.com/2021/04/social-network-analysis-in-r/
+y<-data.frame(myth$"Publication Year",myth$"Cited Reference Count")
+net <- graph.data.frame(y, directed=T)
+V(net)
+```
+
+```{r}
+V(net)$label <- V(net)$name
+V(net)$degree <- degree(net)
+```
+
+```{r}
+hist(V(net)$degree,
+     col = 'blue',
+     main = 'Histogram of Node Degree',
+     ylab = 'Frequency',
+     xlab = 'Degree of Vertices')
+```
+
+```{r}
+set.seed(123)
+#how to set proper seed
+plot(net,
+     vertex.color = 'blue',
+     vertext.size = 2,
+     edge.arrow.size = 0.4,
+     vertex.label.cex = 0.8)
+```
+
+```{r}
+plot(net,
+     vertex.color = rainbow(204),
+     vertex.size = V(net)$degree*0.4,
+     edge.arrow.size = 0.1,
+     layout=layout.fruchterman.reingold)
+```
+
+```{r}
+plot(net,
+     vertex.color = rainbow(204),
+     vertex.size = V(net)$degree*0.4,
+     edge.arrow.size = 0.1,
+     layout=layout.kamada.kawai)
+```
+
