@@ -22,6 +22,7 @@ The primary purpose of this study is to analyze how the field of mythology inter
 -Java version(s): 8.0
 
 Download linik: https://www.java.com/en/download/manual.jsp
+
 Other instruction: https://www.java.com/en/download/help/version_manual.html
 
 -VOSviewer
