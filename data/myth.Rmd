@@ -1,0 +1,309 @@
+---
+title: "Mythology"
+author: "Kunyang Ji"
+date: "2024-02-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(readxl)
+library(igraph)
+```
+
+
+```{r}
+#read data
+data1 <-read_excel("1-1000.xls")
+data2 <-read_excel("1001-2000.xls")
+data3 <-read_excel("2001-3000.xls")
+data4 <-read_excel("3001-4000.xls")
+data5 <-read_excel("4001-5000.xls")
+data6 <-read_excel("5001-6000.xls")
+data7 <-read_excel("6001-7000.xls")
+data8 <-read_excel("7001-8000.xls")
+data9 <-read_excel("8001-9000.xls")
+data10 <-read_excel("9001-10000.xls")
+data11<-read_excel("10001-10173.xls")
+```
+
+```{r}
+myth<- rbind(data1,data2,data3,data4,data5,data6,data7,data8,
+              data9,data10,data11)
+```
+
+
+```{r}
+summary(myth)
+```
+
+```{r}
+#filter columns
+myth_new <- myth %>%
+  select("Authors","Book Authors","Article Title","Document Type", "Cited Reference Count","Publisher","Publisher City","Publication Year","Start Page","End Page","Abstract")
+myth_new <-myth_new %>%
+  filter(`Publication Year` >= 1923 & `Publication Year` <= 2023)
+```
+
+```{r}
+summary(myth_new)
+```
+
+```{r}
+hist(myth_new$`Publication Year`, 
+     main = "Histogram of Publication Year", 
+     xlab = "Publication Year", 
+     col = "lightblue")
+```
+
+
+```{r}
+names(myth_new)[which(names(myth_new) == "Publication Year")] <- "PublicationYear"
+names(myth_new)[which(names(myth_new) == "Cited Reference Count")] <-
+  "CitedReferenceCount"
+names(myth_new)[which(names(myth_new) == "Publisher City")] <-"PublisherCity"
+```
+
+```{r}
+library(ggplot2)
+set.seed(123) 
+aggregated_data <- myth_new %>%
+  group_by(PublicationYear) %>%
+  summarise(NumPapers = n(),
+            TotalCitations = sum(CitedReferenceCount))
+```
+
+```{r}
+aggregated_data <- aggregated_data %>%
+  arrange(PublicationYear) %>%
+  mutate(CitationDifference = c(NA, diff(TotalCitations)))
+
+# Find the top three years with the largest absolute differences
+top_years <- aggregated_data %>%
+  arrange(desc(abs(CitationDifference))) %>%
+  slice_head(n = 1)
+
+# Print the top three years with their corresponding differences
+print(top_years)
+```
+
+
+```{r}
+ggplot(aggregated_data, aes(x =PublicationYear)) +
+  geom_bar(aes(y = NumPapers), stat = "identity", fill = "blue") +
+  geom_line(aes(y = TotalCitations), size = 1, color = "orange") +
+  geom_vline(xintercept = 2019, linetype="dashed")+
+  scale_y_continuous("Number of Papers", 
+                     sec.axis = sec_axis(~ ., name = "Total Citations")) +
+                     theme_minimal() +
+                     labs(x = "Publication Year", 
+                         title = "Number of Papers and Total Citations over Time")+
+                     theme(plot.title = element_text(hjust = 0.5)) 
+print(ggplot)
+```
+```{r}
+#map plot in R
+#https://r.geocompx.org/adv-map.html
+
+library(sf)
+library(tmap)   
+library(leaflet) 
+library(maps)
+```
+
+```{r}
+library(stringr)
+myth_new <- myth_new %>%
+  mutate(PublisherCity = str_to_title(tolower(PublisherCity)))
+```
+
+```{r}
+# PublisherCity from 1923 to 2023
+city_frequency <- myth_new %>%
+  group_by(PublisherCity) %>%
+  summarise(frequency = n())
+
+sorted_city_appearances <- city_frequency %>%
+  arrange(desc(frequency)) %>%
+
+print(sorted_city_appearances)
+```
+
+```{r}
+data <- data.frame(
+  PublisherCity = c("Abingdon","New York","London","Paris","Oxford",
+                    "Berlin","Cambridge","Moscow","Washinton","Hoboken"),
+  frequency = c(738,677,492,392,277,258,239,209,209,205),
+  longitude<-c(-81.977348,-74.005974,-0.127758,2.352222,-1.257726,
+               13.404954,0.121817,37.617298,-77.036873,-82.134972),
+  latitude<- c(36.709835,40.712776,51.507351,48.856613,51.752022,
+               52.520008,52.205338,55.755825,38.907192,31.181160))
+```
+
+
+```{r}
+names(data)[3] <- "longitude"
+names(data)[4] <- "latitude"
+print(data)
+```
+
+
+```{r}
+world_map <- map_data("world")
+
+ggplot() +
+  geom_polygon(data = world_map, aes(x = long, y = lat, group = group), fill = "white", color = "black") +
+  geom_point(data = data, aes(x = longitude, y = latitude, size = frequency), color = "blue", alpha = 0.5) +
+  scale_size_continuous(range = c(3, 12)) +
+  labs(title="PublisherCity from 1923 to 2023",x = "Longitude", y = "Latitude")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+map_myth <- myth_new %>%
+  filter(PublicationYear %in% c(2019))
+```
+
+```{r}
+city_frequency2 <- map_myth %>%
+  group_by(PublisherCity) %>%
+  summarise(frequency = n())
+
+sorted_city_appearances2 <- city_frequency2 %>%
+  arrange(desc(frequency)) %>%
+
+print(sorted_city_appearances2)
+```
+
+```{r}
+data2 <- data.frame(
+  PublisherCity = c("Abingdon", "Moscow", "London", "Tomsk","New York", 
+                    "Paris", "Berlin", "Toronto","Hoboken","Ekaterinburg"),
+  frequency = c(49,30,22,21,17,15,14,14,13,11),
+  longitude <-c(-81.977348,37.617298,-0.127758,84.992455,-74.005974,
+                2.352222,13.404954,-79.383186,31.181160,60.594528),
+  latitude <- c(36.709835,55.755825,51.507351,56.501041,40.712776,
+                48.856613,52.520008,43.653225,31.181160,56.837650))
+```
+
+```{r}
+names(data2)[3] <- "longitude"
+names(data2)[4] <- "latitude"
+print(data2)
+```
+
+```{r}
+world_map <- map_data("world")
+
+ggplot() +
+  geom_polygon(data = world_map, aes(x = long, y = lat, group = group), fill = "white", color = "black") +
+  geom_point(data = data2, aes(x = longitude, y = latitude, size = frequency), color = "blue", alpha = 0.5) +
+  scale_size_continuous(range = c(3, 12)) +
+  labs(title="PublisherCity in 2019",x = "Longitude", y = "Latitude")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+```{r}
+#time-series
+#https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
+# library(forecast)
+# library(tseries)
+```
+
+
+```{r}
+# df_sorted <- myth_new[order(myth_new$`Publication Year`), ]
+# timeseries <- ts(df_sorted$`Publication Year`)
+# timeseries <- ts(timeseries, frequency=1, start=c(1923))
+# plot.ts(timeseries, xlab='Value', ylab='Year')
+```
+
+```{r}
+#net work analysis
+#https://www.r-bloggers.com/2021/04/social-network-analysis-in-r/
+# y<-data.frame(myth$"Publication Year",myth$"Cited Reference Count")
+# y_sample <- sample_n(y, size = 100)
+# net <- graph.data.frame(y_sample, directed=T)
+# V(net)
+```
+
+```{r}
+# V(net)$label <- V(net)$name
+# V(net)$degree <- degree(net)
+# 
+# hist(V(net)$degree,
+#      col = 'blue',
+#      main = 'Histogram of Node Degree',
+#      ylab = 'Frequency',
+#      xlab = 'Degree of Vertices')
+```
+
+```{r}
+# set.seed(123)
+# #how to set proper seed
+# plot(net,
+#      vertex.color = 'blue',
+#      vertext.size = 2,
+#      edge.arrow.size = 0.4,
+#      vertex.label.cex = 0.8)
+```
+
+```{r}
+# plot(net,
+#      vertex.color = rainbow(204),
+#      vertex.size = V(net)$degree*0.4,
+#      edge.arrow.size = 0.1,
+#      layout=layout.fruchterman.reingold)
+```
+
+```{r}
+# plot(net,
+#      vertex.color = rainbow(204),
+#      vertex.size = V(net)$degree*0.4,
+#      edge.arrow.size = 0.1,
+#      layout=layout.kamada.kawai)
+```
+
+```{r}
+#build up a word cloud for the abstract
+#https://towardsdatascience.com/create-a-word-cloud-with-r-bde3e7422e8a
+# library(wordcloud)
+# library(RColorBrewer)
+# library(wordcloud2)
+# library(tm)
+# library(NLP)
+```
+
+```{r}
+# text <- myth_new$Abstract
+# docs <- Corpus(VectorSource(text))
+```
+
+```{r}
+# docs <- docs %>%
+#   tm_map(removeNumbers) %>%
+#   tm_map(removePunctuation) %>%
+#   tm_map(stripWhitespace)
+# docs <- tm_map(docs, content_transformer(tolower))
+# docs <- tm_map(docs, removeWords, stopwords("english"))
+```
+
+```{r}
+# dtm <- TermDocumentMatrix(docs) 
+# matrix <- as.matrix(dtm) 
+# words <- sort(rowSums(matrix),decreasing=TRUE) 
+# df <- data.frame(word = names(words),freq=words)
+# ```
+# 
+# ```{r}
+# set.seed(1234) # for reproducibility 
+# wordcloud(words = df$word, freq = df$freq, min.freq = 1,           max.words=200, random.order=FALSE, rot.per=0.35,            colors=brewer.pal(8, "Dark2"))
+```
+
